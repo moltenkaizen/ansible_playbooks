@@ -1,0 +1,40 @@
+---
+- hosts: vagrant
+  user: vagrant
+  become: yes
+  tasks:
+  - name: add Ubuntu influxdata repository key
+    apt_key: url=https://repos.influxdata.com/influxdb.key state=present
+    when: ansible_distribution == 'Ubuntu'
+
+  - name: add Ubuntu influxdata repository
+    apt_repository: repo="deb https://repos.influxdata.com/ubuntu {{ ansible_distribution_release }} stable" state=present
+    when: ansible_distribution == 'Ubuntu'
+
+  - name: add CentOS influxdata repository
+    yum_repository:
+      name: InfluxDB
+      description: InfluxDB
+      file: influxdb
+      baseurl: https://repos.influxdata.com/rhel/\$releasever/\$basearch/stable
+      gpgcheck: yes
+      gpgkey: https://repos.influxdata.com/influxdb.key
+      enabled: yes
+    when: ansible_distribution == 'CentOS'
+
+  - name: Install "telegraf" package
+    package: name=telegraf state=latest
+
+  - name: write telegraf config file
+    template:
+      src: /usr/share/ansible/conf_srv/telegraf_conf.j2
+      dest: /etc/telegraf/telegraf.conf
+    notify:
+    - restart telegraf
+
+  - name: ensure telegraf is running
+    service: name=telegraf state=started
+  
+  handlers:
+    - name: restart telegraf
+      service: name=telegraf state=restarted
