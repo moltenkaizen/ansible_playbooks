@@ -1,0 +1,8 @@
+---
+- hosts: servers
+  tasks:
+  - name: Get /etc/hosts files
+    fetch:
+      src: /etc/hosts
+      dest: hosts_files/hosts-{{ inventory_hostname }}
+      flat: yes
